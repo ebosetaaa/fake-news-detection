@@ -1,0 +1,4 @@
+ml-service/models/*.pt filter=lfs diff=lfs merge=lfs -text
+ml-service/models/**/*.pt filter=lfs diff=lfs merge=lfs -text
+ml-service/models/**/*.safetensors filter=lfs diff=lfs merge=lfs -text
+ml-service/datasets/*.csv filter=lfs diff=lfs merge=lfs -text
