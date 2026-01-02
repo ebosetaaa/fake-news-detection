@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Fake News Detector</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+<div class="bg-white shadow p-8 rounded w-2/3">
+    <h1 class="text-3xl font-bold mb-4">Fake News Detection System</h1>
+    <p class="mb-4">Check articles for likely misinformation using a BERT + social signals model.</p>
+    <a href="/api/check" class="bg-blue-600 text-white px-4 py-2 rounded">Analyze an Article</a>
+    <a href="/api/health" class="ml-4 text-sm text-gray-600">API health</a>
+</div>
+</body>
+</html>

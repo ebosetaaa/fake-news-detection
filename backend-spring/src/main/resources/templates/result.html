@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Result</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-6">
+<div class="max-w-3xl mx-auto bg-white p-6 rounded shadow">
+    <h2 class="text-2xl font-bold mb-4">Prediction Result</h2>
+
+    <div class="mb-4">
+        <p class="text-lg">Prediction:
+            <span th:text="${result.prediction}" class="font-bold text-red-600"></span>
+        </p>
+    </div>
+
+    <div class="mb-4">
+        <h3 class="font-semibold">Probabilities</h3>
+        <div th:each="entry : ${result.probs.entrySet()}">
+            <p><span th:text="${entry.key}">LABEL</span>: <span th:text="${#numbers.formatDecimal(entry.value, 1, 'POINT', 2, 'NONE')}">0.00</span></p>
+        </div>
+    </div>
+
+    <a href="/api/check" class="text-blue-600">Analyze another article</a>
+</div>
+</body>
+</html>
