@@ -1,0 +1,15 @@
+# ===== ML models =====
+ml-service/models/
+*.pt
+*.safetensors
+*.bin
+checkpoint-*/
+
+# ===== Java / Spring =====
+backend-spring/target/
+backend-spring/HELP.md
+
+# ===== Python =====
+.venv/
+__pycache__/
+*.pyc
