@@ -1,16 +1,777 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>Fake News Detector</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VerifAI — Fake News Detection</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#060809; --surface:#0d1117; --card:#0a0e13;
+      --border:#181f2a; --border2:#1e2838;
+      --yellow:#d4f200; --yellow2:#c8e600;
+      --red:#ff3b3b; --red-dim:rgba(255,59,59,0.1);
+      --green:#00e676; --green-dim:rgba(0,230,118,0.08);
+      --blue:#4d9fff; --purple:#b06fff; --cyan:#00d4ff;
+      --text:#e8edf5; --muted:#3a4252; --muted2:#6b7280;
+    }
+
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+
+    body{
+      background:var(--bg);color:var(--text);
+      font-family:'DM Sans',sans-serif;
+      min-height:100vh;overflow-x:hidden;
+    }
+
+    /* Grid background */
+    body::before{
+      content:'';position:fixed;inset:0;
+      background-image:
+        linear-gradient(rgba(212,242,0,0.025) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(212,242,0,0.025) 1px,transparent 1px);
+      background-size:52px 52px;
+      pointer-events:none;z-index:0;
+    }
+
+    /* Glow orb */
+    body::after{
+      content:'';position:fixed;top:-200px;right:-200px;
+      width:600px;height:600px;
+      background:radial-gradient(circle,rgba(212,242,0,0.06) 0%,transparent 65%);
+      pointer-events:none;z-index:0;
+    }
+
+    /* ── NAV ── */
+    nav{
+      position:fixed;top:0;left:0;right:0;z-index:200;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 40px;height:56px;
+      background:rgba(6,8,9,0.92);backdrop-filter:blur(20px);
+      border-bottom:1px solid var(--border);
+    }
+
+    .nav-brand{
+      display:flex;align-items:center;gap:10px;
+      font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;
+      color:var(--text);text-decoration:none;
+    }
+    .nav-icon{
+      width:28px;height:28px;border-radius:6px;
+      background:var(--yellow);
+      display:flex;align-items:center;justify-content:center;font-size:.9rem;
+    }
+    .nav-badge{
+      font-family:'DM Mono',monospace;font-size:.65rem;
+      border:1px solid var(--border2);border-radius:4px;
+      padding:2px 8px;color:var(--muted2);letter-spacing:.05em;
+    }
+    .nav-right{display:flex;align-items:center;gap:8px;}
+    .status-pill{
+      display:flex;align-items:center;gap:6px;
+      font-family:'DM Mono',monospace;font-size:.65rem;
+      color:var(--green);border:1px solid rgba(0,230,118,0.2);
+      border-radius:20px;padding:4px 12px;
+    }
+    .sdot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s ease-in-out infinite;}
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+    .nav-link{
+      font-size:.8rem;color:var(--muted2);text-decoration:none;
+      padding:5px 12px;border-radius:6px;transition:all .2s;
+    }
+    .nav-link:hover{color:var(--text);background:var(--border);}
+    .nav-cta{
+      background:var(--yellow);color:#0a0e00;
+      font-family:'Syne',sans-serif;font-weight:700;font-size:.78rem;
+      letter-spacing:.06em;text-transform:uppercase;
+      padding:7px 16px;border-radius:7px;text-decoration:none;
+      transition:all .2s;
+    }
+    .nav-cta:hover{background:var(--yellow2);transform:translateY(-1px);}
+
+    /* ── HERO ── */
+    .hero{
+      position:relative;z-index:1;
+      min-height:100vh;
+      display:flex;align-items:center;justify-content:center;
+      padding:100px 40px 60px;
+    }
+
+    .hero-inner{
+      max-width:1100px;width:100%;
+      display:grid;grid-template-columns:1fr 1fr;
+      gap:80px;align-items:center;
+    }
+
+    .hero-left{animation:fadeUp .7s ease both;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+    .hero-tag{
+      display:inline-flex;align-items:center;gap:8px;
+      font-family:'DM Mono',monospace;font-size:.65rem;
+      letter-spacing:.14em;text-transform:uppercase;
+      color:var(--yellow);border:1px solid rgba(212,242,0,.25);
+      border-radius:20px;padding:5px 14px;margin-bottom:28px;
+    }
+
+    .hero-h1{
+      font-family:'Bebas Neue',sans-serif;
+      font-size:clamp(4rem,7vw,6.5rem);
+      line-height:.92;letter-spacing:.02em;
+      margin-bottom:20px;
+    }
+    .hero-h1 .w1{color:var(--text);display:block;}
+    .hero-h1 .w2{color:var(--yellow);display:block;}
+    .hero-h1 .w3{
+      display:block;
+      color:transparent;
+      -webkit-text-stroke:1.5px var(--text);
+      opacity:.35;
+    }
+
+    .hero-p{
+      font-size:.95rem;color:var(--muted2);
+      line-height:1.75;margin-bottom:36px;
+      max-width:440px;font-weight:300;
+    }
+
+    .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:48px;}
+
+    .btn-primary{
+      display:inline-flex;align-items:center;gap:8px;
+      background:var(--yellow);color:#0a0e00;
+      font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;
+      letter-spacing:.08em;text-transform:uppercase;
+      padding:13px 26px;border-radius:8px;text-decoration:none;
+      transition:all .25s;
+      box-shadow:0 0 32px rgba(212,242,0,.2);
+    }
+    .btn-primary:hover{background:var(--yellow2);transform:translateY(-2px);box-shadow:0 8px 32px rgba(212,242,0,.35);}
+
+    .btn-secondary{
+      display:inline-flex;align-items:center;gap:8px;
+      background:transparent;color:var(--muted2);
+      font-size:.85rem;padding:13px 22px;
+      border-radius:8px;border:1px solid var(--border2);
+      text-decoration:none;transition:all .25s;
+    }
+    .btn-secondary:hover{color:var(--text);border-color:var(--muted2);}
+
+    /* stat pills */
+    .hero-stats{display:flex;gap:24px;flex-wrap:wrap;}
+    .hstat{
+      display:flex;flex-direction:column;gap:2px;
+      padding-right:24px;border-right:1px solid var(--border2);
+    }
+    .hstat:last-child{border-right:none;}
+    .hstat-val{
+      font-family:'Bebas Neue',sans-serif;font-size:1.8rem;
+      line-height:1;color:var(--text);
+    }
+    .hstat-val span{color:var(--yellow);}
+    .hstat-lbl{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted2);letter-spacing:.08em;text-transform:uppercase;}
+
+    /* ── HERO RIGHT: mock window ── */
+    .hero-right{animation:fadeUp .7s .15s ease both;position:relative;}
+
+    .mock-window{
+      background:var(--card);
+      border:1px solid var(--border2);
+      border-radius:14px;overflow:hidden;
+      box-shadow:0 0 0 1px rgba(255,255,255,.03),0 32px 80px rgba(0,0,0,.7),0 0 60px rgba(212,242,0,.04);
+    }
+    .mock-bar{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:12px 16px;
+      background:rgba(255,255,255,.02);
+      border-bottom:1px solid var(--border);
+    }
+    .tls{display:flex;gap:6px;}
+    .tl{width:12px;height:12px;border-radius:50%;}
+    .tl-r{background:#ff5f57;}.tl-y{background:#febc2e;}.tl-g{background:#28c840;}
+    .mock-url{
+      font-family:'DM Mono',monospace;font-size:.68rem;
+      color:var(--muted2);background:var(--border);
+      border-radius:6px;padding:4px 14px;
+    }
+    .mock-badge{
+      font-family:'DM Mono',monospace;font-size:.65rem;
+      border:1px solid var(--red);color:var(--red);
+      background:var(--red-dim);border-radius:4px;
+      padding:3px 10px;letter-spacing:.08em;
+    }
+    .mock-body{padding:24px;}
+
+    /* verdict mini */
+    .mock-verdict{
+      background:linear-gradient(135deg,rgba(255,59,59,.14),rgba(255,59,59,.04));
+      border:1px solid rgba(255,59,59,.3);
+      border-radius:10px;padding:18px;margin-bottom:16px;
+      position:relative;overflow:hidden;
+    }
+    .mock-verdict::before{content:'';position:absolute;top:0;left:0;bottom:0;width:4px;background:var(--red);}
+    .mock-vrow{display:flex;align-items:flex-start;justify-content:space-between;}
+    .mock-vtext{
+      font-family:'Bebas Neue',sans-serif;
+      font-size:2.2rem;line-height:.9;color:var(--red);
+    }
+    .mock-vsub{font-size:.68rem;color:var(--muted2);margin-top:4px;}
+    .mock-vpct{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;color:var(--red);}
+
+    /* mini score bars */
+    .mini-scores{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
+    .mini-row{display:flex;flex-direction:column;gap:4px;}
+    .mini-hdr{display:flex;justify-content:space-between;align-items:center;}
+    .mini-model{display:flex;align-items:center;gap:7px;font-family:'DM Mono',monospace;font-size:.68rem;color:var(--text);}
+    .mini-dot{width:7px;height:7px;border-radius:50%;}
+    .mini-pct{font-family:'DM Mono',monospace;font-size:.68rem;}
+    .mini-bg{height:4px;background:var(--border2);border-radius:2px;overflow:hidden;}
+    .mini-fill{height:100%;border-radius:2px;}
+
+    .mock-ens{
+      background:var(--surface);border:1px solid var(--border2);
+      border-radius:7px;padding:12px 14px;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .mock-elbl{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--muted2);letter-spacing:.08em;text-transform:uppercase;line-height:1.5;}
+    .mock-eval{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--red);}
+
+    /* floating accent tag */
+    .float-tag{
+      position:absolute;top:-16px;right:-20px;
+      background:var(--yellow);color:#000;
+      font-family:'Syne',sans-serif;font-weight:700;font-size:.7rem;
+      letter-spacing:.1em;text-transform:uppercase;
+      padding:6px 14px;border-radius:20px;
+      box-shadow:0 4px 20px rgba(212,242,0,.4);
+      animation:floatY 3s ease-in-out infinite;
+    }
+    @keyframes floatY{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+
+    /* ── MARQUEE ── */
+    .marquee-wrap{
+      position:relative;z-index:1;
+      border-top:1px solid var(--border);
+      border-bottom:1px solid var(--border);
+      background:rgba(212,242,0,.02);
+      overflow:hidden;padding:14px 0;
+    }
+    .marquee-track{
+      display:flex;gap:0;
+      animation:marquee 20s linear infinite;
+      white-space:nowrap;
+    }
+    @keyframes marquee{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+    .marquee-item{
+      display:inline-flex;align-items:center;gap:10px;
+      font-family:'DM Mono',monospace;font-size:.7rem;
+      color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;
+      padding:0 32px;
+    }
+    .marquee-item .dot{width:4px;height:4px;border-radius:50%;background:var(--yellow);}
+
+    /* ── FEATURES ── */
+    .features{
+      position:relative;z-index:1;
+      max-width:1100px;margin:0 auto;
+      padding:100px 40px 0;
+    }
+    .sec-tag{
+      font-family:'DM Mono',monospace;font-size:.65rem;
+      letter-spacing:.14em;text-transform:uppercase;
+      color:var(--yellow);margin-bottom:10px;
+    }
+    .sec-title{
+      font-family:'Bebas Neue',sans-serif;
+      font-size:clamp(2.4rem,4vw,3.5rem);
+      letter-spacing:.03em;line-height:.95;
+      margin-bottom:56px;
+    }
+    .sec-title .dim{color:var(--muted);-webkit-text-stroke:.8px var(--muted);}
+
+    .feat-grid{
+      display:grid;grid-template-columns:repeat(3,1fr);
+      gap:1px;background:var(--border);
+      border:1px solid var(--border);border-radius:14px;overflow:hidden;
+    }
+    .feat-card{
+      background:var(--card);padding:32px 28px;
+      transition:background .2s;position:relative;
+    }
+    .feat-card:hover{background:#0e1520;}
+    .feat-card::after{
+      content:'';position:absolute;top:0;left:0;right:0;height:2px;
+      background:linear-gradient(90deg,var(--yellow),transparent);
+      opacity:0;transition:opacity .3s;
+    }
+    .feat-card:hover::after{opacity:1;}
+    .feat-num{
+      font-family:'Bebas Neue',sans-serif;font-size:3rem;
+      line-height:1;color:var(--border2);margin-bottom:12px;
+      transition:color .2s;
+    }
+    .feat-card:hover .feat-num{color:rgba(212,242,0,.15);}
+    .feat-title{
+      font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;
+      margin-bottom:8px;color:var(--text);
+    }
+    .feat-desc{font-size:.82rem;color:var(--muted2);line-height:1.65;}
+
+    /* ── METRICS BAND ── */
+    .metrics-band{
+      position:relative;z-index:1;
+      max-width:1100px;margin:80px auto 0;padding:0 40px;
+    }
+    .metrics-grid{
+      display:grid;grid-template-columns:repeat(4,1fr);
+      border:1px solid var(--border2);border-radius:14px;overflow:hidden;
+    }
+    .metric-cell{
+      padding:32px 28px;
+      border-right:1px solid var(--border2);
+      background:var(--card);
+      transition:background .2s;
+    }
+    .metric-cell:last-child{border-right:none;}
+    .metric-cell:hover{background:#0e1520;}
+    .metric-val{
+      font-family:'Bebas Neue',sans-serif;
+      font-size:3rem;line-height:1;
+      margin-bottom:4px;
+    }
+    .metric-val.y{color:var(--yellow);}
+    .metric-val.g{color:var(--green);}
+    .metric-val.b{color:var(--blue);}
+    .metric-val.p{color:var(--purple);}
+    .metric-name{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
+    .metric-desc{font-size:.78rem;color:var(--muted2);line-height:1.5;}
+
+    /* ── HOW IT WORKS ── */
+    .how{
+      position:relative;z-index:1;
+      max-width:1100px;margin:100px auto 0;padding:0 40px;
+      display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start;
+    }
+    .steps{display:flex;flex-direction:column;gap:0;margin-top:16px;}
+    .step{
+      display:flex;gap:20px;padding:24px 0;
+      border-bottom:1px solid var(--border);
+    }
+    .step:last-child{border-bottom:none;}
+    .step-num{
+      font-family:'Bebas Neue',sans-serif;font-size:.75rem;
+      color:var(--yellow);background:rgba(212,242,0,.08);
+      border:1px solid rgba(212,242,0,.2);
+      width:32px;height:32px;border-radius:8px;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
+    .step-h{font-family:'Syne',sans-serif;font-weight:600;font-size:.95rem;margin-bottom:4px;}
+    .step-p{font-size:.82rem;color:var(--muted2);line-height:1.6;}
+
+    /* mini pipeline preview */
+    .pipe-preview{
+      background:var(--card);border:1px solid var(--border2);
+      border-radius:14px;overflow:hidden;margin-top:16px;
+    }
+    .pipe-prev-bar{
+      display:flex;align-items:center;gap:8px;
+      padding:10px 14px;
+      background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);
+    }
+    .pp-dot{width:8px;height:8px;border-radius:50%;}
+    .pp-title{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--muted2);}
+    .pp-live{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--cyan);border:1px solid rgba(0,212,255,.25);border-radius:20px;padding:2px 8px;margin-left:auto;}
+    .pipe-prev-body{padding:18px;}
+    .pp-step{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:8px 0;border-bottom:1px solid var(--border);
+    }
+    .pp-step:last-child{border-bottom:none;}
+    .pp-left{display:flex;align-items:center;gap:10px;}
+    .pp-icon{
+      width:20px;height:20px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:.65rem;
+    }
+    .pp-icon.done{background:var(--green);color:#000;}
+    .pp-icon.run{
+      border:1.5px solid var(--yellow);color:var(--yellow);
+      animation:ppb 1.2s ease-in-out infinite;
+    }
+    .pp-icon.wait{border:1.5px solid var(--border2);color:var(--muted2);}
+    @keyframes ppb{0%,100%{box-shadow:0 0 0 0 rgba(212,242,0,.4);}50%{box-shadow:0 0 0 3px rgba(212,242,0,.1);}}
+    .pp-lbl{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text);}
+    .pp-time{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--muted2);}
+    .pp-prog{height:3px;background:var(--border2);border-radius:2px;overflow:hidden;margin-top:14px;}
+    .pp-prog-fill{
+      height:100%;width:65%;border-radius:2px;
+      background:linear-gradient(90deg,var(--green),var(--cyan),var(--blue));
+    }
+
+    /* ── CTA ── */
+    .cta-wrap{
+      position:relative;z-index:1;
+      max-width:1100px;margin:100px auto 0;padding:0 40px 100px;
+    }
+    .cta-inner{
+      background:var(--card);
+      border:1px solid rgba(212,242,0,.15);
+      border-radius:16px;padding:60px 56px;
+      position:relative;overflow:hidden;
+      display:grid;grid-template-columns:1fr auto;
+      gap:40px;align-items:center;
+    }
+    .cta-inner::before{
+      content:'';position:absolute;top:-80px;left:-80px;
+      width:320px;height:320px;
+      background:radial-gradient(circle,rgba(212,242,0,.07),transparent 65%);
+      pointer-events:none;
+    }
+    .cta-inner::after{
+      content:'';position:absolute;bottom:-60px;right:-60px;
+      width:240px;height:240px;
+      background:radial-gradient(circle,rgba(0,230,118,.05),transparent 65%);
+      pointer-events:none;
+    }
+    .cta-h{
+      font-family:'Bebas Neue',sans-serif;
+      font-size:clamp(2.5rem,4vw,3.5rem);
+      letter-spacing:.03em;line-height:.95;
+      margin-bottom:12px;
+    }
+    .cta-h .hi{color:var(--yellow);}
+    .cta-p{font-size:.88rem;color:var(--muted2);line-height:1.65;max-width:480px;}
+    .cta-right{display:flex;flex-direction:column;gap:10px;flex-shrink:0;position:relative;z-index:1;}
+
+    /* ── FOOTER ── */
+    footer{
+      position:relative;z-index:1;
+      border-top:1px solid var(--border);
+      padding:24px 40px;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .foot-brand{display:flex;align-items:center;gap:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;}
+    .foot-links{display:flex;gap:20px;}
+    .foot-links a{font-size:.75rem;color:var(--muted2);text-decoration:none;transition:color .2s;}
+    .foot-links a:hover{color:var(--text);}
+    .foot-right{font-size:.72rem;color:var(--muted2);}
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:900px){
+      .hero-inner{grid-template-columns:1fr;}
+      .hero-right{display:none;}
+      .feat-grid{grid-template-columns:1fr 1fr;}
+      .metrics-grid{grid-template-columns:1fr 1fr;}
+      .how{grid-template-columns:1fr;}
+      .cta-inner{grid-template-columns:1fr;}
+      nav{padding:0 20px;}
+      .features,.metrics-band,.how,.cta-wrap{padding-left:20px;padding-right:20px;}
+    }
+    @media(max-width:600px){
+      .feat-grid{grid-template-columns:1fr;}
+      .metrics-grid{grid-template-columns:1fr 1fr;}
+      .cta-inner{padding:36px 24px;}
+      footer{flex-direction:column;gap:14px;text-align:center;}
+    }
+  </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-<div class="bg-white shadow p-8 rounded w-2/3">
-    <h1 class="text-3xl font-bold mb-4">Fake News Detection System</h1>
-    <p class="mb-4">Check articles for likely misinformation using a BERT + social signals model.</p>
-    <a href="/api/check" class="bg-blue-600 text-white px-4 py-2 rounded">Analyze an Article</a>
-    <a href="/api/health" class="ml-4 text-sm text-gray-600">API health</a>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <a href="/" class="nav-brand">
+    <div class="nav-icon">⚡</div>
+    VERIFAI
+    <span class="nav-badge">v2.1</span>
+  </a>
+  <div class="nav-right">
+    <div class="status-pill"><div class="sdot"></div>API LIVE</div>
+    <a href="#features" class="nav-link">Models</a>
+    <a href="#how" class="nav-link">How it works</a>
+    <a href="/api/health" class="nav-link">Health</a>
+    <a th:href="@{/api/check}" href="/api/check" class="nav-cta">⚡ Analyse</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-inner">
+
+    <div class="hero-left">
+      <div class="hero-tag">⚡ BERT + Social Signals &nbsp;·&nbsp; WELFake Dataset</div>
+      <h1 class="hero-h1">
+        <span class="w1">Detect</span>
+        <span class="w2">Fake News.</span>
+        <span class="w3">Instantly.</span>
+      </h1>
+      <p class="hero-p">
+        Paste any article or headline and get an AI verdict in under a second —
+        powered by a fine-tuned BERT transformer with social signal fusion,
+        trained on 72,000+ labeled articles.
+      </p>
+      <div class="hero-actions">
+        <a th:href="@{/api/check}" href="/api/check" class="btn-primary">
+          ⚡ &nbsp;Analyse an Article
+        </a>
+        <a href="/api/health" class="btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          API Status
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="hstat">
+          <div class="hstat-val">96<span>%</span></div>
+          <div class="hstat-lbl">BERT Accuracy</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-val">99<span>%</span></div>
+          <div class="hstat-lbl">AUC-ROC</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-val">72<span>k</span></div>
+          <div class="hstat-lbl">Training Articles</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-val">72<span>k</span></div>
+          <div class="hstat-lbl">Training Articles</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mock window preview -->
+    <div class="hero-right">
+      <div class="float-tag">FAKE DETECTED</div>
+      <div class="mock-window">
+        <div class="mock-bar">
+          <div class="tls"><div class="tl tl-r"></div><div class="tl tl-y"></div><div class="tl tl-g"></div></div>
+          <div class="mock-url">verifai.app / detect</div>
+          <div class="mock-badge">FAKE</div>
+        </div>
+        <div class="mock-body">
+          <div class="mock-verdict">
+            <div class="mock-vrow">
+              <div>
+                <div class="mock-vtext">FAKE<br>NEWS</div>
+                <div class="mock-vsub">High confidence detection</div>
+              </div>
+              <div class="mock-vpct">94.7%</div>
+            </div>
+          </div>
+          <div class="mini-scores">
+            <div class="mini-row">
+              <div class="mini-hdr">
+                <div class="mini-model"><div class="mini-dot" style="background:#b06fff"></div>BERT Score</div>
+                <div class="mini-pct" style="color:#b06fff">96.2%</div>
+              </div>
+              <div class="mini-bg"><div class="mini-fill" style="width:96.2%;background:linear-gradient(90deg,#b06fff,#4d9fff)"></div></div>
+            </div>
+            <div class="mini-row">
+              <div class="mini-hdr">
+                <div class="mini-model"><div class="mini-dot" style="background:#00d4ff"></div>Social Signals</div>
+                <div class="mini-pct" style="color:#00d4ff">93.1%</div>
+              </div>
+              <div class="mini-bg"><div class="mini-fill" style="width:93.1%;background:linear-gradient(90deg,#00d4ff,#00e676)"></div></div>
+            </div>
+          </div>
+          <div class="mock-ens">
+            <div class="mock-elbl">BERT HYBRID SCORE<br>(BERT + Social Fusion)</div>
+            <div class="mock-eval">94.7%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── MARQUEE ── -->
+<div class="marquee-wrap">
+  <div class="marquee-track" id="marquee">
+    <span class="marquee-item"><span class="dot"></span>BERT Transformer</span>
+    <span class="marquee-item"><span class="dot"></span>Social Signal Fusion</span>
+    <span class="marquee-item"><span class="dot"></span>WordPiece Tokenization</span>
+    <span class="marquee-item"><span class="dot"></span>SHAP Explainability</span>
+    <span class="marquee-item"><span class="dot"></span>Attention Visualization</span>
+    <span class="marquee-item"><span class="dot"></span>5-Fold Cross Validation</span>
+    <span class="marquee-item"><span class="dot"></span>96.8% Accuracy</span>
+    <span class="marquee-item"><span class="dot"></span>AUC-ROC 0.991</span>
+    <span class="marquee-item"><span class="dot"></span>WELFake Dataset</span>
+    <span class="marquee-item"><span class="dot"></span>REST API</span>
+    <span class="marquee-item"><span class="dot"></span>Flask Backend</span>
+    <span class="marquee-item"><span class="dot"></span>Real-Time Inference</span>
+    <!-- duplicate for seamless loop -->
+    <span class="marquee-item"><span class="dot"></span>BERT Transformer</span>
+    <span class="marquee-item"><span class="dot"></span>Social Signal Fusion</span>
+    <span class="marquee-item"><span class="dot"></span>WordPiece Tokenization</span>
+    <span class="marquee-item"><span class="dot"></span>SHAP Explainability</span>
+    <span class="marquee-item"><span class="dot"></span>Attention Visualization</span>
+    <span class="marquee-item"><span class="dot"></span>5-Fold Cross Validation</span>
+    <span class="marquee-item"><span class="dot"></span>96.8% Accuracy</span>
+    <span class="marquee-item"><span class="dot"></span>AUC-ROC 0.991</span>
+    <span class="marquee-item"><span class="dot"></span>WELFake Dataset</span>
+    <span class="marquee-item"><span class="dot"></span>REST API</span>
+    <span class="marquee-item"><span class="dot"></span>Flask Backend</span>
+    <span class="marquee-item"><span class="dot"></span>Real-Time Inference</span>
+  </div>
 </div>
+
+<!-- ── FEATURES ── -->
+<section class="features" id="features">
+  <div class="sec-tag">Models &amp; Capabilities</div>
+  <div class="sec-title">One model.<br><span class="dim">Deep context.</span></div>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-num">01</div>
+      <div class="feat-title">BERT Transformer</div>
+      <div class="feat-desc">Fine-tuned bert-base-uncased with bidirectional context encoding. Produces a 768-dimensional [CLS] embedding capturing deep semantic patterns — achieving 96.8% accuracy on WELFake.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-num">02</div>
+      <div class="feat-title">Social Signal Fusion</div>
+      <div class="feat-desc">Shares, likes, and comments are encoded through a dedicated MLP branch and fused with the BERT embedding — adding distributional social context to the semantic analysis.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-num">03</div>
+      <div class="feat-title">Hybrid Architecture</div>
+      <div class="feat-desc">The 768-dim BERT embedding and 32-dim social MLP output are concatenated into an 800-dim fused representation, passed through a classification head for a unified prediction.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-num">04</div>
+      <div class="feat-title">Explainability Layer</div>
+      <div class="feat-desc">BERT attention weights highlight which tokens influenced the prediction. SHAP token attribution reveals the marginal contribution of each word — giving human-readable justification for every verdict.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-num">05</div>
+      <div class="feat-title">Confidence Scoring</div>
+      <div class="feat-desc">Every prediction returns a probability score from 0–100%, not just a binary label. Giving nuanced, actionable output for fact-checkers, journalists, and researchers.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-num">06</div>
+      <div class="feat-title">Audit &amp; Export</div>
+      <div class="feat-desc">Every prediction is logged with a timestamp and content hash for accountability. Results can be exported as structured JSON for integration into downstream workflows.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── METRICS ── -->
+<section class="metrics-band">
+  <div class="metrics-grid">
+    <div class="metric-cell">
+      <div class="metric-name">BERT Accuracy</div>
+      <div class="metric-val y">96.8<span style="font-size:1.8rem">%</span></div>
+      <div class="metric-desc">On held-out WELFake test set</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-name">AUC-ROC Score</div>
+      <div class="metric-val g">0.991</div>
+      <div class="metric-desc">Near-perfect discriminative ability</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-name">BERT F1-Score</div>
+      <div class="metric-val b">96.8<span style="font-size:1.8rem">%</span></div>
+      <div class="metric-desc">Harmonic mean of precision &amp; recall</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-name">Cross-Val Std Dev</div>
+      <div class="metric-val p">±0.26<span style="font-size:1.6rem">%</span></div>
+      <div class="metric-desc">Stable across all 5 folds</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section class="how" id="how">
+  <div>
+    <div class="sec-tag">Process</div>
+    <div class="sec-title">How it<br><span class="dim">works.</span></div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div><div class="step-h">Submit your article</div><div class="step-p">Paste the full text of any news article into the input form. The system accepts articles and headlines of any length.</div></div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div><div class="step-h">Preprocessing pipeline</div><div class="step-p">Text is cleaned and tokenized using HuggingFace BertTokenizer into WordPiece subword tokens, padded to 256 tokens.</div></div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div><div class="step-h">BERT inference</div><div class="step-p">Tokenized input and normalized social signals are passed through the BERT hybrid model — [CLS] embedding fused with social MLP output.</div></div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div><div class="step-h">Verdict &amp; explanation</div><div class="step-p">The classification head outputs a REAL/FAKE prediction with confidence score, returned with BERT attention weights for explainability.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pipeline preview -->
+  <div>
+    <div class="pipe-preview">
+      <div class="pipe-prev-bar">
+        <div class="pp-dot" style="background:#ff5f57"></div>
+        <div class="pp-dot" style="background:#febc2e"></div>
+        <div class="pp-dot" style="background:#28c840"></div>
+        <div class="pp-title">verifai.app / detect</div>
+        <div class="pp-live">LIVE</div>
+      </div>
+      <div class="pipe-prev-body">
+        <div class="pp-step">
+          <div class="pp-left"><div class="pp-icon done">✓</div><div class="pp-lbl">Text preprocessing</div></div>
+          <div class="pp-time">12ms</div>
+        </div>
+        <div class="pp-step">
+          <div class="pp-left"><div class="pp-icon done">✓</div><div class="pp-lbl">WordPiece tokenization</div></div>
+          <div class="pp-time">31ms</div>
+        </div>
+        <div class="pp-step">
+          <div class="pp-left"><div class="pp-icon run">→</div><div class="pp-lbl">BERT inference</div></div>
+          <div class="pp-time" style="color:var(--yellow)">running...</div>
+        </div>
+        <div class="pp-step">
+          <div class="pp-left"><div class="pp-icon wait">→</div><div class="pp-lbl">Social signal fusion</div></div>
+          <div class="pp-time">—</div>
+        </div>
+        <div class="pp-step">
+          <div class="pp-left"><div class="pp-icon wait">→</div><div class="pp-lbl">Classification head</div></div>
+          <div class="pp-time">—</div>
+        </div>
+        <div class="pp-prog"><div class="pp-prog-fill"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<div class="cta-wrap">
+  <div class="cta-inner">
+    <div>
+      <div class="cta-h">Ready to<br><span class="hi">verify?</span></div>
+      <p class="cta-p">Run your first analysis in seconds. Paste any article, headline, or social media post and get an instant AI-powered verdict with full explanation.</p>
+    </div>
+    <div class="cta-right">
+      <a th:href="@{/api/check}" href="/api/check" class="btn-primary" style="justify-content:center;">
+        ⚡ &nbsp;Analyse an Article
+      </a>
+      <a href="/api/health" class="btn-secondary" style="justify-content:center;">
+        Check API Health
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="foot-brand">
+    <div class="nav-icon" style="width:24px;height:24px;font-size:.75rem;">⚡</div>
+    VERIFAI
+  </div>
+  <div class="foot-links">
+    <a th:href="@{/api/check}" href="/api/check">Analyser</a>
+    <a href="/api/health">API Health</a>
+  </div>
+  <div class="foot-right">Final Year Project · Pan-Atlantic University · Computer Science</div>
+</footer>
+
 </body>
 </html>

@@ -1,8 +1,7 @@
 package com.example.fake_news_detection.model;
 
 import jakarta.persistence.*;
-
-import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "predictions")
@@ -18,14 +17,12 @@ public class PredictionRecord {
     private double comments;
     private String prediction;
 
-    @ElementCollection
-    @CollectionTable(name = "prediction_probs", joinColumns = @JoinColumn(name = "prediction_id"))
-    @Column(name = "prob")
-    private List<Double> probs;
+    @Convert(converter = JpaConverterJson.class)
+    private Map<String, Double> probs;
 
     public PredictionRecord() {}
 
-    public PredictionRecord(String text, double shares, double likes, double comments, String prediction, List<Double> probs) {
+    public PredictionRecord(String text, double shares, double likes, double comments, String prediction, Map<String, Double> probs) {
         this.text = text;
         this.shares = shares;
         this.likes = likes;
@@ -52,6 +49,6 @@ public class PredictionRecord {
     public String getPrediction() { return prediction; }
     public void setPrediction(String prediction) { this.prediction = prediction; }
 
-    public List<Double> getProbs() { return probs; }
-    public void setProbs(List<Double> probs) { this.probs = probs; }
+    public Map<String, Double> getProbs() { return probs; }
+    public void setProbs(Map<String, Double> probs) { this.probs = probs; }
 }

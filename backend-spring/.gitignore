@@ -32,6 +32,8 @@
 # ### VS Code ###
 # .vscode/
 # ML models
+/target/
+HELP.md
 *.pt
 *.safetensors
 *.bin

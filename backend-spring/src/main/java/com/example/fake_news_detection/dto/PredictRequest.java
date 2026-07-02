@@ -16,15 +16,35 @@ public class PredictRequest {
         this.comments = comments;
     }
 
-    public String getText() { return text; }
-    public void setText(String text) { this.text = text; }
+    public String getText() {
+        return text;
+    }
 
-    public double getShares() { return shares; }
-    public void setShares(double shares) { this.shares = shares; }
+    public void setText(String text) {
+        this.text = text;
+    }
 
-    public double getLikes() { return likes; }
-    public void setLikes(double likes) { this.likes = likes; }
+    public double getShares() {
+        return shares;
+    }
 
-    public double getComments() { return comments; }
-    public void setComments(double comments) { this.comments = comments; }
+    public void setShares(double shares) {
+        this.shares = shares;
+    }
+
+    public double getLikes() {
+        return likes;
+    }
+
+    public void setLikes(double likes) {
+        this.likes = likes;
+    }
+
+    public double getComments() {
+        return comments;
+    }
+
+    public void setComments(double comments) {
+        this.comments = comments;
+    }
 }

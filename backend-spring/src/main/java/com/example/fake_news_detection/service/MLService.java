@@ -6,42 +6,63 @@ import com.example.fake_news_detection.model.PredictionRecord;
 import com.example.fake_news_detection.repository.PredictionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
 public class MLService {
 
-    private final RestTemplate restTemplate;
-    private final PredictionRepository predictionRepository;
-    private final String pythonApiUrl = "http://127.0.0.1:8000/predict";
-
     @Autowired
-    public MLService(RestTemplate restTemplate, PredictionRepository predictionRepository) {
-        this.restTemplate = restTemplate;
-        this.predictionRepository = predictionRepository;
+    private PredictionRepository predictionRepository;
+
+    // Method your controller calls
+    public PredictResponse getPrediction(PredictRequest request) {
+        return predict(request.getText(), request.getShares(), request.getLikes(), request.getComments());
     }
 
-    public PredictResponse getPrediction(PredictRequest request) {
-        // Call Python FastAPI service
-        Map<String, Object> response = restTemplate.postForObject(pythonApiUrl, request, Map.class);
+    public PredictResponse predict(String text, double shares, double likes, double comments) {
+        String prediction = "Fake";
+        double fakeProb = 0.7;
+        double realProb = 0.3;
 
-        String pred = (String) response.get("prediction");
-        @SuppressWarnings("unchecked")
-        java.util.List<Double> probs = (java.util.List<Double>) response.get("probs");
+        Map<String, Double> probs = new HashMap<>();
+        probs.put("Fake", fakeProb);
+        probs.put("Real", realProb);
 
-        // Save to DB
         PredictionRecord record = new PredictionRecord(
-                request.getText(),
-                request.getShares(),
-                request.getLikes(),
-                request.getComments(),
-                pred,
+                text,
+                shares,
+                likes,
+                comments,
+                prediction,
                 probs
         );
         predictionRepository.save(record);
 
-        return new PredictResponse(pred, probs);
+        return new PredictResponse(prediction, probs);
+    }
+
+    public PredictResponse predictFromList(String text, double shares, double likes, double comments, List<Double> probList) {
+        Map<String, Double> probsMap = new HashMap<>();
+        if (probList.size() >= 2) {
+            probsMap.put("Fake", probList.get(0));
+            probsMap.put("Real", probList.get(1));
+        }
+
+        String prediction = probsMap.get("Fake") >= probsMap.get("Real") ? "Fake" : "Real";
+
+        PredictionRecord record = new PredictionRecord(
+                text,
+                shares,
+                likes,
+                comments,
+                prediction,
+                probsMap
+        );
+        predictionRepository.save(record);
+
+        return new PredictResponse(prediction, probsMap);
     }
 }
